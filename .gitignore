@@ -3,6 +3,8 @@ bin/
 obj/
 dist/
 node_modules/
+# Built SPA artifact emitted by `vite build` (see frontend/vite.config.ts)
+backend/wwwroot/
 
 # Env / secrets
 frontend/.env
@@ -12,3 +14,4 @@ backend/appsettings.Development.json
 
 # OS
 .DS_Store
+.playwright-mcp/

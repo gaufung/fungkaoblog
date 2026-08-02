@@ -1,4 +1,5 @@
 using Blog.Api.Data;
+using Blog.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,21 +8,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<BlogDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// --- CORS for the React front-end ---
-const string CorsPolicy = "frontend";
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(CorsPolicy, policy =>
-    {
-        var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-                      ?? new[] { "http://localhost:5173" };
-        policy.WithOrigins(origins)
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
-});
+// Resolves the built SPA's hashed asset filenames for the Razor shell view.
+builder.Services.AddSingleton<ViteManifest>();
 
-builder.Services.AddControllers();
+// MVC: API controllers + Razor views that host the front-end artifact.
+builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
@@ -38,7 +29,22 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors(CorsPolicy);
+
+// Serve the built SPA assets (JS/CSS/favicon) from wwwroot.
+app.UseStaticFiles();
+
+app.UseRouting();
+
+// JSON API (e.g. /api/posts).
 app.MapControllers();
+
+// Default MVC route renders the SPA shell.
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// Any unmatched, non-API path also returns the SPA shell so client-side
+// routing works on a full page load / refresh.
+app.MapFallbackToController("Index", "Home");
 
 app.Run();

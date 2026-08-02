@@ -1,0 +1,24 @@
+@inject Blog.Api.Services.ViteManifest Vite
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    @foreach (var href in Vite.EntryStyles())
+    {
+        <link rel="stylesheet" href="@href" />
+    }
+    @{
+        var script = Vite.EntryScript();
+    }
+    @if (script is not null)
+    {
+        <script type="module" crossorigin src="@script"></script>
+    }
+</head>
+<body>
+    @RenderBody()
+</body>
+</html>

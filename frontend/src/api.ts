@@ -1,4 +1,6 @@
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string;
+// The backend serves this SPA, so the API lives on the same origin by default.
+// An explicit VITE_API_BASE_URL still overrides it (e.g. for `vite dev`).
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "";
 
 export interface Tag {
   name: string;

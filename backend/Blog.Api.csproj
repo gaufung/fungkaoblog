@@ -14,4 +14,56 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.10" />
   </ItemGroup>
 
+  <!-- ================= Front-end (Vite) integration ================= -->
+  <!-- `vite build` emits the SPA into wwwroot; these targets run it as part
+       of `dotnet build`/`dotnet publish`. Set SkipFrontendBuild=true to skip
+       (e.g. in CI when the SPA is built separately). -->
+  <PropertyGroup>
+    <FrontendDir>$(MSBuildProjectDirectory)/../frontend</FrontendDir>
+    <FrontendManifest>$(MSBuildProjectDirectory)/wwwroot/.vite/manifest.json</FrontendManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Sources that, when changed, require rebuilding the SPA. -->
+    <FrontendInputs Include="$(FrontendDir)/src/**/*" />
+    <FrontendInputs Include="$(FrontendDir)/public/**/*" />
+    <FrontendInputs Include="$(FrontendDir)/index.html" />
+    <FrontendInputs Include="$(FrontendDir)/package.json" />
+    <FrontendInputs Include="$(FrontendDir)/package-lock.json" />
+    <FrontendInputs Include="$(FrontendDir)/vite.config.ts" />
+    <FrontendInputs Include="$(FrontendDir)/tsconfig*.json" />
+  </ItemGroup>
+
+  <Target Name="EnsureFrontendDependencies"
+          Condition="'$(SkipFrontendBuild)' != 'true' And '$(DesignTimeBuild)' != 'true' And !Exists('$(FrontendDir)/node_modules')">
+    <Message Importance="high" Text="Installing front-end dependencies (npm install)..." />
+    <Exec Command="npm install" WorkingDirectory="$(FrontendDir)" />
+  </Target>
+
+  <!-- Incremental: only re-runs when a FrontendInput is newer than the manifest. -->
+  <Target Name="BuildFrontend"
+          BeforeTargets="Build"
+          DependsOnTargets="EnsureFrontendDependencies"
+          Condition="'$(SkipFrontendBuild)' != 'true' And '$(DesignTimeBuild)' != 'true'"
+          Inputs="@(FrontendInputs)"
+          Outputs="$(FrontendManifest)">
+    <Message Importance="high" Text="Building front-end (npm run build)..." />
+    <Exec Command="npm run build" WorkingDirectory="$(FrontendDir)" />
+  </Target>
+
+  <!-- Ensure the freshly built SPA is copied to the publish output even when
+       the wwwroot content glob was evaluated before the build populated it. -->
+  <Target Name="IncludeFrontendInPublish"
+          AfterTargets="ComputeFilesToPublish"
+          Condition="'$(SkipFrontendBuild)' != 'true'">
+    <ItemGroup>
+      <_FrontendDist Include="$(MSBuildProjectDirectory)/wwwroot/**" />
+      <ResolvedFileToPublish Include="@(_FrontendDist)"
+                             Exclude="@(ResolvedFileToPublish)">
+        <RelativePath>wwwroot/%(_FrontendDist.RecursiveDir)%(_FrontendDist.Filename)%(_FrontendDist.Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+
 </Project>
