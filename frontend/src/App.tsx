@@ -1,42 +1,24 @@
 import { useMemo } from "react";
-import { useMsal } from "@azure/msal-react";
-import { createApi, isSuperAdmin } from "./api";
-import { loginRequest } from "./authConfig";
+import { createApi } from "./api";
 import { useRoute, navigate } from "./router";
 import Home from "./pages/Home";
 import PostView from "./pages/PostView";
-import Editor from "./pages/Editor";
 import "./App.css";
 
 export default function App() {
-  const { instance, accounts } = useMsal();
-  const account = accounts[0] ?? null;
-  const admin = isSuperAdmin(account);
   const route = useRoute();
 
-  const api = useMemo(
-    () =>
-      createApi(
-        instance,
-        () => instance.getActiveAccount() ?? accounts[0] ?? null
-      ),
-    [instance, accounts]
-  );
-
-  const signIn = () => instance.loginPopup(loginRequest).catch(console.error);
-  const signOut = () => instance.logoutPopup().catch(console.error);
+  const api = useMemo(() => createApi(), []);
 
   const renderRoute = () => {
     switch (route.name) {
       case "post":
-        return <PostView api={api} slug={route.slug} isAdmin={admin} />;
-      case "new":
-        return admin ? <Editor api={api} /> : <NotAllowed />;
-      case "edit":
-        return admin ? <Editor api={api} slug={route.slug} /> : <NotAllowed />;
+        return <PostView api={api} slug={route.slug} />;
+      case "tag":
+        return <Home api={api} page={route.page} tag={route.slug} />;
       case "home":
       default:
-        return <Home api={api} isAdmin={admin} />;
+        return <Home api={api} page={route.name === "home" ? route.page : 1} />;
     }
   };
 
@@ -44,36 +26,25 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <a className="brand" href="#/" onClick={() => navigate("/")}>
-          My Blog
+          Fung Kao's Blog
         </a>
-        <div className="auth">
-          {account ? (
-            <>
-              <span className="who">
-                {account.name ?? account.username}
-                {admin && <span className="badge admin">SuperAdmin</span>}
-              </span>
-              <button className="secondary" onClick={signOut}>
-                Sign out
-              </button>
-            </>
-          ) : (
-            <button onClick={signIn}>Sign in</button>
-          )}
-        </div>
+        <a
+          className="github"
+          href="https://github.com/gaufung"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="GitHub profile"
+        >
+          <svg viewBox="0 0 16 16" width="24" height="24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"
+            />
+          </svg>
+        </a>
       </header>
 
       <main className="content">{renderRoute()}</main>
-    </div>
-  );
-}
-
-function NotAllowed() {
-  return (
-    <div>
-      <h1>Not allowed</h1>
-      <p>You need the SuperAdmin role to edit content.</p>
-      <a href="#/">Back to posts</a>
     </div>
   );
 }

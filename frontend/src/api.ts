@@ -1,8 +1,9 @@
-import {
-  type IPublicClientApplication,
-  type AccountInfo,
-} from "@azure/msal-browser";
-import { apiBaseUrl, loginRequest, SUPER_ADMIN_ROLE } from "./authConfig";
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string;
+
+export interface Tag {
+  name: string;
+  slug: string;
+}
 
 export interface PostSummary {
   id: number;
@@ -11,37 +12,18 @@ export interface PostSummary {
   createdAt: string;
   updatedAt: string;
   published: boolean;
+  tags: Tag[];
 }
 
 export interface Post extends PostSummary {
   content: string;
 }
 
-export interface PostInput {
-  title: string;
-  slug?: string;
-  content: string;
-  published: boolean;
-}
-
-// Returns true when the signed-in account holds the SuperAdmin app role.
-export function isSuperAdmin(account: AccountInfo | null): boolean {
-  if (!account) return false;
-  const roles = (account.idTokenClaims as { roles?: string[] } | undefined)?.roles ?? [];
-  return roles.includes(SUPER_ADMIN_ROLE);
-}
-
-async function authHeader(
-  msal: IPublicClientApplication,
-  account: AccountInfo | null
-): Promise<Record<string, string>> {
-  if (!account) return {};
-  try {
-    const result = await msal.acquireTokenSilent({ ...loginRequest, account });
-    return { Authorization: `Bearer ${result.accessToken}` };
-  } catch {
-    return {};
-  }
+export interface Paged<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 async function handle<T>(res: Response): Promise<T> {
@@ -53,57 +35,20 @@ async function handle<T>(res: Response): Promise<T> {
   return (await res.json()) as T;
 }
 
-export function createApi(
-  msal: IPublicClientApplication,
-  getAccount: () => AccountInfo | null
-) {
+export function createApi() {
   const base = apiBaseUrl.replace(/\/$/, "");
 
   return {
-    async listPosts(includeDrafts = false): Promise<PostSummary[]> {
-      const headers = await authHeader(msal, getAccount());
-      const res = await fetch(
-        `${base}/api/posts?includeDrafts=${includeDrafts}`,
-        { headers }
-      );
-      return handle<PostSummary[]>(res);
+    async listPosts(page = 1, tag?: string): Promise<Paged<PostSummary>> {
+      const params = new URLSearchParams({ page: String(page) });
+      if (tag) params.set("tag", tag);
+      const res = await fetch(`${base}/api/posts?${params.toString()}`);
+      return handle<Paged<PostSummary>>(res);
     },
 
     async getPost(slug: string): Promise<Post> {
-      const headers = await authHeader(msal, getAccount());
-      const res = await fetch(`${base}/api/posts/${encodeURIComponent(slug)}`, {
-        headers,
-      });
+      const res = await fetch(`${base}/api/posts/${encodeURIComponent(slug)}`);
       return handle<Post>(res);
-    },
-
-    async createPost(input: PostInput): Promise<Post> {
-      const headers = await authHeader(msal, getAccount());
-      const res = await fetch(`${base}/api/posts`, {
-        method: "POST",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      });
-      return handle<Post>(res);
-    },
-
-    async updatePost(id: number, input: PostInput): Promise<Post> {
-      const headers = await authHeader(msal, getAccount());
-      const res = await fetch(`${base}/api/posts/${id}`, {
-        method: "PUT",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      });
-      return handle<Post>(res);
-    },
-
-    async deletePost(id: number): Promise<void> {
-      const headers = await authHeader(msal, getAccount());
-      const res = await fetch(`${base}/api/posts/${id}`, {
-        method: "DELETE",
-        headers,
-      });
-      return handle<void>(res);
     },
   };
 }

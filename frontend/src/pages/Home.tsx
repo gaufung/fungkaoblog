@@ -4,46 +4,59 @@ import { navigate } from "../router";
 
 interface Props {
   api: Api;
-  isAdmin: boolean;
+  page: number;
+  // When set, only posts carrying this tag slug are shown.
+  tag?: string;
 }
 
-export default function Home({ api, isAdmin }: Props) {
+const PAGE_SIZE = 8;
+
+export default function Home({ api, page, tag }: Props) {
   const [posts, setPosts] = useState<PostSummary[]>([]);
+  const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const load = () => {
+  useEffect(() => {
     setLoading(true);
+    setError(null);
     api
-      .listPosts(isAdmin)
-      .then(setPosts)
+      .listPosts(page, tag)
+      .then((result) => {
+        setPosts(result.items);
+        setTotal(result.total);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  };
+  }, [api, page, tag]);
 
-  useEffect(load, [isAdmin]);
-
-  const onDelete = async (id: number) => {
-    if (!confirm("Delete this post?")) return;
-    try {
-      await api.deletePost(id);
-      load();
-    } catch (e) {
-      alert((e as Error).message);
-    }
-  };
+  const basePath = tag ? `/tag/${tag}` : "";
+  const goToPage = (p: number) =>
+    navigate(p <= 1 ? basePath || "/" : `${basePath}/page/${p}`);
 
   if (loading) return <p>Loading…</p>;
   if (error) return <p className="error">{error}</p>;
 
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  // The display name for a tag slug is taken from the loaded posts.
+  const tagName = tag
+    ? posts.find((p) => p.tags.some((t) => t.slug === tag))?.tags.find(
+        (t) => t.slug === tag
+      )?.name ?? tag
+    : null;
+
   return (
     <div>
       <div className="page-head">
-        <h1>Posts</h1>
-        {isAdmin && (
-          <button onClick={() => navigate("/new")}>+ New post</button>
-        )}
+        <h1>{tagName ? `Posts tagged “${tagName}”` : "Posts"}</h1>
       </div>
+
+      {tag && (
+        <p className="meta">
+          <a href="#/">← All posts</a>
+        </p>
+      )}
 
       {posts.length === 0 && <p>No posts yet.</p>}
 
@@ -53,23 +66,52 @@ export default function Home({ api, isAdmin }: Props) {
             <a href={`#/post/${p.slug}`} className="post-title">
               {p.title}
             </a>
-            {!p.published && <span className="badge">draft</span>}
             <div className="meta">
               {new Date(p.createdAt).toLocaleDateString()}
-              {isAdmin && (
-                <>
-                  {" · "}
-                  <a href={`#/edit/${p.slug}`}>edit</a>
-                  {" · "}
-                  <button className="link" onClick={() => onDelete(p.id)}>
-                    delete
-                  </button>
-                </>
-              )}
             </div>
+            {p.tags.length > 0 && (
+              <div className="tags">
+                {p.tags.map((t) => (
+                  <a key={t.slug} className="tag" href={`#/tag/${t.slug}`}>
+                    {t.name}
+                  </a>
+                ))}
+              </div>
+            )}
           </li>
         ))}
       </ul>
+
+      {totalPages > 1 && (
+        <nav className="pagination" aria-label="Pagination">
+          <button
+            className="secondary"
+            onClick={() => goToPage(page - 1)}
+            disabled={page <= 1}
+          >
+            ← Prev
+          </button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+            <button
+              key={p}
+              className={p === page ? "page current" : "page"}
+              aria-current={p === page ? "page" : undefined}
+              onClick={() => goToPage(p)}
+            >
+              {p}
+            </button>
+          ))}
+
+          <button
+            className="secondary"
+            onClick={() => goToPage(page + 1)}
+            disabled={page >= totalPages}
+          >
+            Next →
+          </button>
+        </nav>
+      )}
     </div>
   );
 }

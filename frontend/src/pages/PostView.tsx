@@ -5,10 +5,9 @@ import type { Api, Post } from "../api";
 interface Props {
   api: Api;
   slug: string;
-  isAdmin: boolean;
 }
 
-export default function PostView({ api, slug, isAdmin }: Props) {
+export default function PostView({ api, slug }: Props) {
   const [post, setPost] = useState<Post | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,7 +16,7 @@ export default function PostView({ api, slug, isAdmin }: Props) {
       .getPost(slug)
       .then(setPost)
       .catch((e) => setError(e.message));
-  }, [slug]);
+  }, [api, slug]);
 
   if (error) return <p className="error">{error}</p>;
   if (!post) return <p>Loading…</p>;
@@ -26,9 +25,17 @@ export default function PostView({ api, slug, isAdmin }: Props) {
     <article>
       <div className="page-head">
         <h1>{post.title}</h1>
-        {isAdmin && <a href={`#/edit/${post.slug}`}>edit</a>}
       </div>
       <p className="meta">{new Date(post.createdAt).toLocaleString()}</p>
+      {post.tags.length > 0 && (
+        <div className="tags">
+          {post.tags.map((t) => (
+            <a key={t.slug} className="tag" href={`#/tag/${t.slug}`}>
+              {t.name}
+            </a>
+          ))}
+        </div>
+      )}
       <div data-color-mode="light">
         <MDEditor.Markdown source={post.content} />
       </div>

@@ -10,8 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@azure/msal-browser": "^5.17.3",
-    "@azure/msal-react": "^5.5.4",
     "@uiw/react-md-editor": "^4.1.1",
     "axios": "^1.19.0",
     "react": "^19.2.8",

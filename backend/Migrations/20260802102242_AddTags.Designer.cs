@@ -4,6 +4,7 @@ using Blog.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Blog.Api.Migrations
 {
     [DbContext(typeof(BlogDbContext))]
-    partial class BlogDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260802102242_AddTags")]
+    partial class AddTags
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -300,36 +303,6 @@ namespace Blog.Api.Migrations
                             Slug = "my-favorite-developer-tools",
                             Title = "My Favorite Developer Tools",
                             UpdatedAt = new DateTime(2026, 1, 24, 12, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 25,
-                            Content = "# 你好，世界！\n\n这是一篇用于测试**中文字符兼容性**的文章。如果你能正常阅读这段文字，说明数据库、接口和前端都能正确处理 UTF-8 编码。\n\n## 常见标点\n\n逗号，句号。感叹号！问号？分号；冒号：引号「你好」『世界』，还有省略号……\n\n## 列表\n\n- 苹果 🍎\n- 香蕉 🍌\n- 西瓜 🍉\n\n## 代码\n\n```csharp\nConsole.WriteLine(\"你好，世界\");\n```\n\n> 引用：路漫漫其修远兮，吾将上下而求索。\n",
-                            CreatedAt = new DateTime(2026, 1, 25, 12, 0, 0, 0, DateTimeKind.Utc),
-                            Published = true,
-                            Slug = "chinese-hello-world",
-                            Title = "你好，世界：中文博客测试",
-                            UpdatedAt = new DateTime(2026, 1, 25, 12, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 26,
-                            Content = "# 前端开发笔记\n\n在现代前端项目中，**React** 搭配 **TypeScript** 已经成为主流选择。类型系统能在编译期发现许多潜在的错误。\n\n## 一个简单的组件\n\n```tsx\ninterface Props {\n  名称: string;\n}\n\nexport function 问候({ 名称 }: Props) {\n  return <p>你好，{名称}！</p>;\n}\n```\n\n## 小结\n\n1. 组件应保持单一职责。\n2. 尽量复用逻辑。\n3. 为公共接口编写类型。\n",
-                            CreatedAt = new DateTime(2026, 1, 26, 12, 0, 0, 0, DateTimeKind.Utc),
-                            Published = true,
-                            Slug = "frontend-notes-react-typescript",
-                            Title = "前端开发笔记：React 与 TypeScript",
-                            UpdatedAt = new DateTime(2026, 1, 26, 12, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 27,
-                            Content = "# 异步编程\n\n在 .NET 中，`async` 和 `await` 让编写非阻塞代码变得简单直观。\n\n| 关键字 | 含义 |\n| --- | --- |\n| `async` | 标记一个异步方法 |\n| `await` | 等待异步操作完成 |\n\n```csharp\npublic async Task<string> 获取数据Async()\n{\n    await Task.Delay(100);\n    return \"完成\";\n}\n```\n\n**注意**：不要在异步方法中使用 `.Result`，否则可能导致死锁。\n",
-                            CreatedAt = new DateTime(2026, 1, 27, 12, 0, 0, 0, DateTimeKind.Utc),
-                            Published = true,
-                            Slug = "dotnet-csharp-async",
-                            Title = "深入理解 .NET 与 C# 的异步编程",
-                            UpdatedAt = new DateTime(2026, 1, 27, 12, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 
@@ -448,18 +421,6 @@ namespace Blog.Api.Migrations
                             Id = 15,
                             Name = "Tutorial",
                             Slug = "tutorial"
-                        },
-                        new
-                        {
-                            Id = 16,
-                            Name = "教程",
-                            Slug = "jiaocheng"
-                        },
-                        new
-                        {
-                            Id = 17,
-                            Name = "前端",
-                            Slug = "qianduan"
                         });
                 });
 
@@ -717,46 +678,6 @@ namespace Blog.Api.Migrations
                         {
                             PostsId = 24,
                             TagsId = 9
-                        },
-                        new
-                        {
-                            PostsId = 25,
-                            TagsId = 16
-                        },
-                        new
-                        {
-                            PostsId = 25,
-                            TagsId = 15
-                        },
-                        new
-                        {
-                            PostsId = 26,
-                            TagsId = 17
-                        },
-                        new
-                        {
-                            PostsId = 26,
-                            TagsId = 4
-                        },
-                        new
-                        {
-                            PostsId = 26,
-                            TagsId = 5
-                        },
-                        new
-                        {
-                            PostsId = 27,
-                            TagsId = 16
-                        },
-                        new
-                        {
-                            PostsId = 27,
-                            TagsId = 1
-                        },
-                        new
-                        {
-                            PostsId = 27,
-                            TagsId = 2
                         });
                 });
 
