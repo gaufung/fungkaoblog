@@ -1,0 +1,13 @@
+# Build output
+bin/
+obj/
+dist/
+node_modules/
+
+# Env / secrets
+frontend/.env
+backend/appsettings.*.local.json
+*.user
+
+# OS
+.DS_Store

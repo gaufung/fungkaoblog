@@ -1,0 +1,20 @@
+@Blog.Api_HostAddress = https://localhost:7000
+
+### List published posts
+GET {{Blog.Api_HostAddress}}/api/posts
+Accept: application/json
+
+### Get a post by slug
+GET {{Blog.Api_HostAddress}}/api/posts/hello-world
+Accept: application/json
+
+### Create a post (SuperAdmin bearer token required)
+POST {{Blog.Api_HostAddress}}/api/posts
+Content-Type: application/json
+Authorization: Bearer <access-token>
+
+{
+  "title": "Hello world",
+  "content": "# Hello\n\nThis is **markdown**.",
+  "published": true
+}
