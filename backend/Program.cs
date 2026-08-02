@@ -11,6 +11,9 @@ builder.Services.AddDbContext<BlogDbContext>(options =>
 // Resolves the built SPA's hashed asset filenames for the Razor shell view.
 builder.Services.AddSingleton<ViteManifest>();
 
+// In-memory cache for individual post responses (see PostsController).
+builder.Services.AddMemoryCache();
+
 // MVC: API controllers + Razor views that host the front-end artifact.
 builder.Services.AddControllersWithViews();
 

@@ -19,13 +19,19 @@
   color: var(--fg);
 }
 
-.github {
+.social {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.social-link {
   display: inline-flex;
   align-items: center;
   color: var(--muted);
 }
 
-.github:hover {
+.social-link:hover {
   color: var(--fg);
 }
 

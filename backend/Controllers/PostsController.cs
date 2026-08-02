@@ -3,6 +3,7 @@ using Blog.Api.Dtos;
 using Blog.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Blog.Api.Controllers;
 
@@ -10,11 +11,17 @@ namespace Blog.Api.Controllers;
 [Route("api/[controller]")]
 public class PostsController : ControllerBase
 {
-    private readonly BlogDbContext _db;
+    // Published posts are read-only (managed directly in the DB), so caching
+    // individual posts is safe; staleness is bounded by this expiration.
+    private static readonly TimeSpan PostCacheDuration = TimeSpan.FromHours(1);
 
-    public PostsController(BlogDbContext db)
+    private readonly BlogDbContext _db;
+    private readonly IMemoryCache _cache;
+
+    public PostsController(BlogDbContext db, IMemoryCache cache)
     {
         _db = db;
+        _cache = cache;
     }
 
     // Public: list published posts (newest first), paginated. Optionally
@@ -49,19 +56,30 @@ public class PostsController : ControllerBase
         return Ok(new PagedResult<PostSummaryDto>(items, total, page, pageSize));
     }
 
-    // Public: read a single published post by slug.
+    // Public: read a single published post by slug. The response is cached
+    // in memory (keyed by slug) to avoid hitting the database on every read.
     [HttpGet("{slug}")]
     public async Task<ActionResult<PostDto>> GetBySlug(string slug)
     {
-        var post = await _db.Posts
-            .Include(p => p.Tags)
-            .FirstOrDefaultAsync(p => p.Slug == slug && p.Published);
-        if (post is null)
+        var cacheKey = $"post:{slug}";
+        if (!_cache.TryGetValue(cacheKey, out PostDto? dto))
         {
-            return NotFound();
+            var post = await _db.Posts
+                .Include(p => p.Tags)
+                .FirstOrDefaultAsync(p => p.Slug == slug && p.Published);
+            if (post is null)
+            {
+                return NotFound();
+            }
+
+            dto = ToDto(post);
+            _cache.Set(cacheKey, dto, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = PostCacheDuration
+            });
         }
 
-        return Ok(ToDto(post));
+        return Ok(dto);
     }
 
     private static PostDto ToDto(Post p) =>
