@@ -45,7 +45,8 @@ public class PostsController : ControllerBase
         var total = await published.CountAsync();
 
         var items = await published
-            .OrderByDescending(p => p.CreatedAt)
+            .OrderByDescending(p => p.SourceNumber ?? -1)
+            .ThenByDescending(p => p.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(p => new PostSummaryDto(

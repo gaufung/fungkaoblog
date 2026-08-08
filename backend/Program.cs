@@ -8,6 +8,21 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<BlogDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddOptions<GitHubBlogSyncOptions>()
+    .Bind(builder.Configuration.GetSection(GitHubBlogSyncOptions.SectionName))
+    .Validate(options => !string.IsNullOrWhiteSpace(options.Owner), "GitHub owner is required.")
+    .Validate(options => !string.IsNullOrWhiteSpace(options.Repository), "GitHub repository is required.")
+    .Validate(options => !string.IsNullOrWhiteSpace(options.Folder), "GitHub blog folder is required.")
+    .Validate(options => options.Interval > TimeSpan.Zero, "Sync interval must be greater than zero.")
+    .ValidateOnStart();
+
+builder.Services.AddHttpClient<GitHubBlogClient>(client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(2);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("fungkaoblog-content-sync/1.0");
+});
+builder.Services.AddHostedService<GitHubBlogSyncService>();
+
 // Resolves the built SPA's hashed asset filenames for the Razor shell view.
 builder.Services.AddSingleton<ViteManifest>();
 

@@ -19,6 +19,14 @@ public class BlogDbContext : DbContext
             .HasIndex(p => p.Slug)
             .IsUnique();
 
+        modelBuilder.Entity<Post>()
+            .HasIndex(p => p.Title)
+            .IsUnique();
+
+        modelBuilder.Entity<Post>()
+            .HasIndex(p => p.SourceNumber)
+            .IsUnique();
+
         modelBuilder.Entity<Tag>()
             .HasIndex(t => t.Slug)
             .IsUnique();

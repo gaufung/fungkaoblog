@@ -20,6 +20,9 @@ public class Post
 
     public bool Published { get; set; } = true;
 
+    // Numeric prefix from the source Markdown filename. Larger values sort first.
+    public int? SourceNumber { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
