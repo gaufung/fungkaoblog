@@ -80,6 +80,7 @@ setup above.
   source and interval with the `GitHubBlogSync` section in
   `backend/appsettings.json`. Set `GitHubBlogSync__Token` through environment
   configuration if authenticated GitHub API requests are needed.
+- The latest 50 published posts are available as an RSS 2.0 feed at `/rss.xml`.
 - Markdown filenames must use the `<number>-<title>.md` format. The numeric
   prefix controls newest-first ordering. Front matter supplies `name`, `tags`,
   and `status`; only `status: publish` files are stored, and the front matter is

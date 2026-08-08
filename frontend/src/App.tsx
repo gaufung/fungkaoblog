@@ -57,6 +57,32 @@ export default function App() {
               />
             </svg>
           </a>
+          <a
+            className="social-link"
+            href="mailto:fungkao92@gmail.com"
+            aria-label="Email Fung Kao"
+          >
+            <svg viewBox="0 0 24 24" width="23" height="23" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M3.75 4.5h16.5A2.75 2.75 0 0 1 23 7.25v9.5a2.75 2.75 0 0 1-2.75 2.75H3.75A2.75 2.75 0 0 1 1 16.75v-9.5A2.75 2.75 0 0 1 3.75 4.5Zm0 2a.75.75 0 0 0-.75.75v.386l9 5.4 9-5.4V7.25a.75.75 0 0 0-.75-.75H3.75ZM21 9.968l-8.485 5.09a1 1 0 0 1-1.03 0L3 9.968v6.782c0 .414.336.75.75.75h16.5a.75.75 0 0 0 .75-.75V9.968Z"
+              />
+            </svg>
+          </a>
+          <a
+            className="social-link rss-link"
+            href="/rss.xml"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="RSS feed"
+          >
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M5.5 3.5a1.5 1.5 0 0 0 0 3c6.617 0 12 5.383 12 12a1.5 1.5 0 0 0 3 0c0-8.271-6.729-15-15-15Zm0 6a1.5 1.5 0 0 0 0 3 6 6 0 0 1 6 6 1.5 1.5 0 0 0 3 0 9 9 0 0 0-9-9ZM7.75 18.5A2.25 2.25 0 1 1 3.25 18.5a2.25 2.25 0 0 1 4.5 0Z"
+              />
+            </svg>
+          </a>
         </nav>
       </header>
 

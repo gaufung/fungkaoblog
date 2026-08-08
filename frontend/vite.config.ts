@@ -17,6 +17,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": "http://localhost:5133",
+      "/rss.xml": "http://localhost:5133",
     },
   },
 })
