@@ -3,17 +3,17 @@ using System;
 using Blog.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace Blog.Api.Migrations
 {
     [DbContext(typeof(BlogDbContext))]
-    [Migration("20260802103606_AddChinesePosts")]
-    partial class AddChinesePosts
+    [Migration("20261006093616_InitialPostgreSql")]
+    partial class InitialPostgreSql
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,44 +21,53 @@ namespace Blog.Api.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "10.0.10")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Blog.Api.Models.Post", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("Published")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Slug")
                         .IsRequired()
                         .HasMaxLength(220)
-                        .HasColumnType("nvarchar(220)");
+                        .HasColumnType("character varying(220)");
+
+                    b.Property<int?>("SourceNumber")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("character varying(200)");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.HasIndex("SourceNumber")
+                        .IsUnique();
+
+                    b.HasIndex("Title")
                         .IsUnique();
 
                     b.ToTable("Posts");
@@ -87,7 +96,7 @@ namespace Blog.Api.Migrations
                         new
                         {
                             Id = 3,
-                            Content = "# Motivation\n\nI wanted a minimal place to write, without a heavyweight CMS. This project pairs a small Web API with Azure SQL storage and Entra ID sign-in so only I can publish, while everyone can read.",
+                            Content = "# Motivation\n\nI wanted a minimal place to write, without a heavyweight CMS. This project pairs a small Web API with PostgreSQL storage and GitHub content synchronization, while everyone can read.",
                             CreatedAt = new DateTime(2026, 1, 3, 12, 0, 0, 0, DateTimeKind.Utc),
                             Published = true,
                             Slug = "why-i-built-this-blog",
@@ -340,19 +349,19 @@ namespace Blog.Api.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Slug")
                         .IsRequired()
                         .HasMaxLength(60)
-                        .HasColumnType("nvarchar(60)");
+                        .HasColumnType("character varying(60)");
 
                     b.HasKey("Id");
 
@@ -469,10 +478,10 @@ namespace Blog.Api.Migrations
             modelBuilder.Entity("PostTag", b =>
                 {
                     b.Property<int>("PostsId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("TagsId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("PostsId", "TagsId");
 

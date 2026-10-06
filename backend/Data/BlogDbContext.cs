@@ -79,8 +79,8 @@ public class BlogDbContext : DbContext
                 Title = "Why I Built This Blog",
                 Slug = "why-i-built-this-blog",
                 Content = "# Motivation\n\nI wanted a minimal place to write, without a heavyweight CMS. " +
-                          "This project pairs a small Web API with Azure SQL storage and Entra ID sign-in " +
-                          "so only I can publish, while everyone can read.",
+                          "This project pairs a small Web API with PostgreSQL storage and GitHub content " +
+                          "synchronization, while everyone can read.",
                 Published = true,
                 CreatedAt = seededAt.AddDays(2),
                 UpdatedAt = seededAt.AddDays(2)
