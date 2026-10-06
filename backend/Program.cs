@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- Database (Azure SQL Server via EF Core) ---
+// --- Database (Azure Database for PostgreSQL via EF Core) ---
 builder.Services.AddDbContext<BlogDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddOptions<GitHubBlogSyncOptions>()
     .Bind(builder.Configuration.GetSection(GitHubBlogSyncOptions.SectionName))

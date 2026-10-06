@@ -3,7 +3,7 @@
 A deliberately small, read-only blog served as a **single ASP.NET Core MVC
 application**:
 
-- **Backend** — ASP.NET Core MVC (`Blog.Api`), EF Core, **Azure SQL Database**
+- **Backend** — ASP.NET Core MVC (`Blog.Api`), EF Core, **PostgreSQL**
   storage. Exposes a JSON API (`/api/posts`) and an MVC view that hosts the
   built front-end.
 - **Frontend** — React + TypeScript (Vite), Markdown rendering. `vite build`
@@ -24,15 +24,36 @@ blog/
 The front-end and API run on the **same origin** — the backend serves the
 compiled React app, so no CORS configuration is required.
 
-## 1. Azure setup (one time)
+Live site: [fungkaoblog-pg.azurewebsites.net](https://fungkaoblog-pg.azurewebsites.net/).
 
-### Azure SQL Database
-1. Create an Azure SQL Server + Database (e.g. `BlogDb`).
-2. Put the connection string in `backend/appsettings.json` →
-   `ConnectionStrings:DefaultConnection`. Two common options:
-   - **Entra auth** (recommended): keep `Authentication=Active Directory Default`
-     and sign in locally with `az login`.
-   - **SQL auth**: `Server=...;Database=BlogDb;User ID=...;******;Encrypt=True;`
+## 1. Database configuration
+
+Use PostgreSQL 16 or later. The application uses the Npgsql EF Core provider;
+connection strings use PostgreSQL syntax, not SQL Server syntax. Supply the
+password through environment configuration rather than committing it:
+
+```bash
+export ConnectionStrings__DefaultConnection='Host=localhost;Port=5432;Database=fungkaoblog;Username=fungkaoblog_app;Password=<local-password>'
+```
+
+For example, a local PostgreSQL database can be started with Docker:
+
+```bash
+docker run --name fungkaoblog-postgres \
+  -e POSTGRES_DB=fungkaoblog \
+  -e POSTGRES_USER=fungkaoblog_app \
+  -e POSTGRES_PASSWORD='<local-password>' \
+  -p 127.0.0.1:5432:5432 -d postgres:16
+```
+
+For Azure, use the server's fully qualified hostname and certificate validation:
+
+```text
+Host=transfer-hub-pg-yuemic.postgres.database.azure.com;Port=5432;Database=fungkaoblog;Username=fungkaoblog_app;Password=<secret>;SSL Mode=VerifyFull;Timeout=30
+```
+
+The Azure database is reachable only from its private network or a peered
+network. Running `az login` alone does not provide network or database access.
 
 ## 2. Build & run (single application)
 
@@ -72,6 +93,93 @@ npm run dev
 To point the front-end at a differently-hosted API, set `VITE_API_BASE_URL`
 in `frontend/.env` (see `.env.example`). Leave it empty for the same-origin
 setup above.
+
+## 4. Azure deployment
+
+Infrastructure is defined in `infra/main.bicep` and `infra/shared.bicep`.
+The blog has its own hosting and networking resources in Japan West:
+
+| Resource | Name / configuration |
+| --- | --- |
+| Resource group | `fungkaoblog-rg` |
+| App Service | `fungkaoblog-pg`, Linux, .NET 10, HTTPS only |
+| App Service plan | `fungkaoblog-pg-plan`, Basic B1 |
+| Virtual network | `fungkaoblog-pg-vnet`, `10.31.0.0/16` |
+| Deployment identity | `fungkaoblog-pg-github-deploy` |
+| PostgreSQL server (reused) | `transfer-hub-pg-yuemic` in `transfer-hub-rg` |
+| Dedicated database / login | `fungkaoblog` / `fungkaoblog_app` |
+
+The new network peers with `transfer-hub-japanwest-vnet` and links to the
+existing PostgreSQL private DNS zone. The shared-resource module adds only
+the blog database, reverse peering, and DNS link; it does not redeploy the
+shared server or change its authentication, firewall, or other databases.
+The `web` subnet is used by App Service. The `database-setup` subnet is reserved
+for temporary administrative containers and should have no continuously running
+container after setup.
+
+To provision or update the infrastructure:
+
+```bash
+az group create --name fungkaoblog-rg --location japanwest
+az deployment group create \
+  --resource-group fungkaoblog-rg \
+  --name postgresql-blog \
+  --template-file infra/main.bicep \
+  --parameters @/secure/path/blog.parameters.json
+```
+
+The parameters file must supply the secure `databaseConnection` parameter
+using the Azure connection-string format above. Keep it outside the repository
+with access restricted to its owner. Reuse the existing application's
+connection string when updating infrastructure; changing that setting does not
+rotate the PostgreSQL role's password.
+
+On first setup, a PostgreSQL administrator must create the dedicated
+`fungkaoblog_app` login with `NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION`,
+make it the owner of the new `fungkaoblog` database, and revoke public access to
+that database. `infra/setup-database.sql` performs these operations without
+changing an existing role's password. From a PostgreSQL 16+ client on the
+private network, set `PGHOST`, `PGUSER`, `PGPASSWORD`, `PGSSLMODE=verify-full`,
+and `PGSSLROOTCERT` to a trusted CA bundle; set `BLOG_DATABASE_PASSWORD` to the
+same restricted-login password supplied in the infrastructure parameter. Run:
+
+```bash
+psql --no-psqlrc --dbname=postgres --file=infra/setup-database.sql
+```
+
+Do not store either password in scripts or shell history. The application
+needs schema-creation permissions in its own database because it applies EF
+migrations at startup; do not give it the shared server administrator login.
+Store only the restricted login's connection string in the App Service setting
+`ConnectionStrings__DefaultConnection`.
+
+GitHub Actions publishes and deploys on pushes to `master` or manual runs on
+`master`. Deployment uses OIDC, not a stored publish profile. Configure these
+repository variables from the Bicep deployment outputs:
+
+| Repository variable | Deployment output |
+| --- | --- |
+| `AZURE_BLOG_CLIENT_ID` | `deployClientId` |
+| `AZURE_BLOG_TENANT_ID` | `tenantId` |
+| `AZURE_BLOG_SUBSCRIPTION_ID` | `subscriptionId` |
+
+The deployment identity trusts only `gaufung/fungkaoblog` on `master` and has
+Website Contributor access scoped to the new web app. The workflow deploys
+code only; infrastructure changes are applied separately with Bicep.
+Basic SCM/FTP publishing authentication is disabled.
+
+### Migration from the former SQL Server deployment
+
+`backend/Migrations` contains a fresh PostgreSQL baseline, including sample
+posts/tags and PostgreSQL identity columns and UTC timestamps. The former
+SQL Server migrations are not compatible with PostgreSQL and have been
+replaced. Use a **new, empty PostgreSQL database**; this is not an in-place
+conversion of an existing SQL Server database.
+
+Published content is rebuilt by the GitHub synchronizer after startup. Any
+database-only content must be backed up/exported separately before retiring
+an old deployment. Provisioning this deployment does not delete the former
+SQL Server database or application.
 
 ## Notes
 - Database schema is created/updated automatically via EF Core migrations
